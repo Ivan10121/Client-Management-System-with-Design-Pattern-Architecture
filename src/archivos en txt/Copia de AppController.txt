@@ -1,0 +1,51 @@
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.List;
+
+
+public class AppController {
+    private CustomerGateway gateway;
+    private CustomerModel model;
+    private CustomerView view;
+
+    private String url = "jdbc:mysql://localhost:3306/sql_store2";
+    private String user = "root";
+    private String password = "Ivan123456789";
+
+    public AppController(CustomerModel model) {
+        try{
+            Connection connection = DriverManager.getConnection(url, user, password);
+            gateway = new CustomerGateway(connection);
+        }catch(SQLException e){
+            System.err.println("No se pudo establecer conexion con la base de datos");
+        }
+        this.model = model;
+        view = new CustomerView(this,model);
+        view.createUI();
+        loadAllCustomers();
+    }
+
+    public void loadAllCustomers() {
+        List<Customer> customers = gateway.findAllCustomers();
+        model.setCustomers(customers);
+    }
+
+    public void findCustomersByName(String name) {
+        List<Customer> filtered = gateway.findCustomersByName(name);
+        model.setCustomers(filtered);
+    }
+
+    public void addCustomer(Customer customer){
+        gateway.insertCustomer(customer);
+        model.addCustomer(customer);
+        loadAllCustomers();
+    }
+
+    public void deleteCustomer(int id){
+        gateway.deleteCustomerById(id);
+        model.deleteCustomerById(id);
+        loadAllCustomers();
+    }
+}

@@ -1,0 +1,89 @@
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CustomerGateway {
+    private Connection connection;
+
+    private String FIND_BY_CUSTOMER_NAME_SQL = "SELECT * FROM customers WHERE first_name LIKE ? OR last_name LIKE ?";
+    private String GET_ALL_SQL = "SELECT * FROM customers";
+    private String INSERT_CUSTOMER_SQL = "INSERT INTO customers (first_name, last_name, phone, address, city, state, points) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    private String DELETE_CUSTOMER_BY_ID_SQL = "DELETE FROM customers WHERE customer_id = ?";
+
+
+    public CustomerGateway(Connection connection) {
+        this.connection = DatabaseSingleton.getInstance().getConnection();
+    }
+
+    public List<Customer> findAllCustomers() {
+        List<Customer> customers = new ArrayList<>();
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(GET_ALL_SQL);
+            while (rs.next()) {
+                customers.add(extractCustomerFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return customers;
+    }
+
+    public List<Customer> findCustomersByName(String name) {
+        List<Customer> customers = new ArrayList<>();
+        try {
+            PreparedStatement statement = connection.prepareStatement(FIND_BY_CUSTOMER_NAME_SQL);
+            statement.setString(1, "%" + name + "%");
+            statement.setString(2, "%" + name + "%");
+            ResultSet rs = statement.executeQuery();
+            while (rs.next()) {
+                customers.add(extractCustomerFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return customers;
+    }
+
+    public void insertCustomer(Customer customer){
+        try{
+            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_CUSTOMER_SQL);
+            preparedStatement.setString(1, customer.getFirstName());
+            preparedStatement.setString(2, customer.getLastName());
+            preparedStatement.setString(3, customer.getPhone());
+            preparedStatement.setString(4, customer.getAddress());
+            preparedStatement.setString(5, customer.getCity());
+            preparedStatement.setString(6, customer.getState());
+            preparedStatement.setInt(7, customer.getPoints());
+            preparedStatement.executeUpdate();
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteCustomerById(int id){
+        try{
+            PreparedStatement preparedStatement = connection.prepareStatement(DELETE_CUSTOMER_BY_ID_SQL);
+            preparedStatement.setInt(1, id);
+            preparedStatement.executeUpdate();
+
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    private Customer extractCustomerFromResultSet(ResultSet rs) throws SQLException {
+        return new Customer(
+            rs.getInt("customer_id"),
+            rs.getString("first_name"),
+            rs.getString("last_name"),
+            rs.getString("phone"),
+            rs.getString("address"),
+            rs.getString("city"),
+            rs.getString("state"),
+            rs.getInt("points")
+        );
+    }
+
+
+}

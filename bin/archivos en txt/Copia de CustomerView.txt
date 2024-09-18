@@ -1,0 +1,145 @@
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+import javax.swing.table.DefaultTableModel;
+
+
+
+public class CustomerView extends JFrame implements Observer {
+
+    
+    private AppController controller;
+    private CustomerModel model;
+
+
+    private JTextField searchField, firstNameField, lastNameField, phoneField, addressField, cityField, stateField, pointsField;
+    
+    private JButton loadAllButton, searchButton, addButton, deleteButton;
+    private JTable customerTable;
+    private DefaultTableModel tableModel;
+
+    public CustomerView(AppController controller, CustomerModel model) {
+        this.controller = controller;
+        this.model = model;
+        model.addObserver(this);
+        setMinimumSize(new Dimension(1000, 600));
+        setSize(1200, 800);
+    }
+
+    public void createUI() {
+        setTitle("Customers");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // Panel for search and load all functionality
+        JPanel topPanel = new JPanel(new FlowLayout());
+        searchField = new JTextField(20);
+        loadAllButton = new JButton("Load All");
+        searchButton = new JButton("Search");
+        topPanel.add(searchField);
+        topPanel.add(searchButton);
+        topPanel.add(loadAllButton);
+
+        // Fields for adding a new customer
+        JPanel addPanel = new JPanel(new GridLayout(0, 2));
+        firstNameField = CharTextField.createTextField(20);
+        lastNameField = CharTextField.createTextField(20);
+        phoneField = NumericTextField.createTextField(10);
+        addressField = new JTextField(10);
+        cityField = new JTextField(10);
+        stateField = CharTextField.createTextField(2);
+        pointsField = NumericTextField.createTextField(5);
+        addButton = new JButton("Add Customer");
+        deleteButton = new JButton("Delete Selected");
+
+        addPanel.add(new JLabel("First Name:"));
+        addPanel.add(firstNameField);
+        addPanel.add(new JLabel("Last Name:"));
+        addPanel.add(lastNameField);
+        addPanel.add(new JLabel("Phone:"));
+        addPanel.add(phoneField);
+        addPanel.add(new JLabel("Address:"));
+        addPanel.add(addressField);
+        addPanel.add(new JLabel("City:"));
+        addPanel.add(cityField);
+        addPanel.add(new JLabel("State:"));
+        addPanel.add(stateField);
+        addPanel.add(new JLabel("Points:"));
+        addPanel.add(pointsField);
+        addPanel.add(addButton);
+        addPanel.add(deleteButton);
+
+        
+
+
+        String[] columnNames = {"ID", "First Name", "Last Name", "Phone", "Address", "City", "State", "Points"};
+        tableModel = new DefaultTableModel(columnNames, 0);
+        customerTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(customerTable);
+        customerTable.setAutoCreateRowSorter(true);
+
+        add(topPanel, BorderLayout.NORTH);
+        add(addPanel, BorderLayout.SOUTH);
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Action listeners for buttons
+        loadAllButton.addActionListener(e -> controller.loadAllCustomers());
+        searchButton.addActionListener(e -> controller.findCustomersByName(searchField.getText()));
+        addButton.addActionListener(e -> addCustomer());
+        deleteButton.addActionListener(e -> deleteSelectedCustomer());
+
+        pack();
+        setVisible(true);
+    }
+
+    private void addCustomer() {
+        if (firstNameField.getText().trim().isEmpty() ||
+            lastNameField.getText().trim().isEmpty() ||
+            phoneField.getText().trim().isEmpty() ||
+            addressField.getText().trim().isEmpty() ||
+            cityField.getText().trim().isEmpty() ||
+            stateField.getText().trim().isEmpty() ||
+            pointsField.getText().trim().isEmpty()) {
+        
+            JOptionPane.showMessageDialog(null, "One or more fields are empty. Please complete all fields.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String firstName = firstNameField.getText();
+        String lastName = lastNameField.getText();
+        String phone = phoneField.getText();
+        String address = addressField.getText();
+        String city = cityField.getText();
+        String state = stateField.getText();
+        int points = Integer.parseInt(pointsField.getText());
+        controller.addCustomer(new Customer(0, firstName, lastName, phone, address, city, state, points));
+        JOptionPane.showMessageDialog(null, "One or more fields are empty. Please complete all fields.", "Error", JOptionPane.ERROR_MESSAGE);
+        clearFields();
+    }
+
+    private void deleteSelectedCustomer() {
+        int selectedRow = customerTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            int customerId = (int) tableModel.getValueAt(selectedRow, 0);
+            controller.deleteCustomer(customerId);
+        }
+    }
+
+    private void clearFields() {
+        firstNameField.setText("");
+        lastNameField.setText("");
+        phoneField.setText("");
+        addressField.setText("");
+        cityField.setText("");
+        stateField.setText("");
+        pointsField.setText("");
+    }
+
+    public void update(List<Customer> customers) {
+        tableModel.setRowCount(0);
+        for (Customer customer : customers) {
+            tableModel.addRow(new Object[]{customer.getCustomerId(), customer.getFirstName(), customer.getLastName(),
+                customer.getPhone(), customer.getAddress(), customer.getCity(), customer.getState(), customer.getPoints()});
+        }
+    }
+}
